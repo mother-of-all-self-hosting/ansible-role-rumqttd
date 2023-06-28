@@ -1,0 +1,23 @@
+---
+
+- name: Check existence of rumqttd systemd service
+  ansible.builtin.stat:
+    path: "{{ devture_systemd_docker_base_systemd_path }}/{{ rumqttd_identifier }}.service"
+  register: rumqttd_service_stat
+
+- when: rumqttd_service_stat.stat.exists | bool
+  block:
+    - name: Ensure rumqttd service is stopped
+      ansible.builtin.service:
+        name: "{{ rumqttd_identifier }}"
+        state: stopped
+        daemon_reload: true
+    - name: Ensure rumqttd service doesn't exist
+      ansible.builtin.file:
+        dest: "{{ devture_systemd_docker_base_systemd_path }}/{{ rumqttd_identifier }}.service"
+        state: absent
+
+    - name: Ensure rumqttd base path is files deleted (make sure to delete node data)
+      ansible.builtin.file:
+        path: "{{ rumqttd_base_path }}"
+        state: absent

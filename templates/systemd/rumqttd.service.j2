@@ -1,0 +1,44 @@
+[Unit]
+Description=rumqttd ActivityPub Server ({{ rumqttd_identifier }})
+{% for service in rumqttd_systemd_required_services_list %}
+Requires={{ service }}
+After={{ service }}
+{% endfor %}
+DefaultDependencies=no
+
+[Service]
+Type=simple
+ExecStartPre=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_systemd_docker_base_host_command_docker }} kill {{ rumqttd_identifier }} 2>/dev/null || true'
+ExecStartPre=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_systemd_docker_base_host_command_docker }} rm {{ rumqttd_identifier }} 2>/dev/null || true'
+
+ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} create \
+                --rm \
+                --name={{ rumqttd_identifier }} \
+                --log-driver=none \
+                --user={{ rumqttd_uid }}:{{ rumqttd_gid }} \
+                --cap-drop=ALL \
+                {% if rumqttd_container_http_host_bind_port %}
+                -p {{ rumqttd_container_http_host_bind_port }}:{{ rumqttd_container_http_port }} \
+                {% endif %}
+                --label-file={{ rumqttd_config_path }}/labels \
+                --network={{ rumqttd_container_network }} \
+                --mount type=bind,src={{ rumqttd_data_path }},dst=/rumqttd/storage \
+                --read-only \
+                --tmpfs=/tmp:rw,noexec,nosuid,size=100m \
+                --env-file={{ rumqttd_env_path }} \
+                {{ rumqttd_container_image }}
+
+{% for network in rumqttd_container_additional_networks %}
+ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} network connect {{ network }} {{ rumqttd_identifier }}
+{% endfor %}
+
+ExecStart={{ devture_systemd_docker_base_host_command_docker }} start --attach {{ rumqttd_identifier }}
+
+ExecStop=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_systemd_docker_base_host_command_docker }} kill {{ rumqttd_identifier }} 2>/dev/null || true'
+ExecStop=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_systemd_docker_base_host_command_docker }} rm {{ rumqttd_identifier }} 2>/dev/null || true'
+Restart=always
+RestartSec=30
+SyslogIdentifier={{ rumqttd_identifier }}
+
+[Install]
+WantedBy=multi-user.target

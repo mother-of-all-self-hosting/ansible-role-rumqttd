@@ -1,0 +1,34 @@
+---
+
+rumqttd_enabled: true
+rumqttd_identifier: rumqttd
+
+rumqttd_uid: ''
+rumqttd_gid: ''
+
+rumqttd_base_path: "/{{ rumqttd_identifier }}"
+rumqttd_config_path: "{{ rumqttd_base_path }}/config"
+
+rumqttd_systemd_required_services_list: ['docker.service']
+
+rumqttd_version: 0.21.0
+
+rumqttd_container_image: "{{ rumqttd_container_image_registry_prefix }}superseriousbusiness/rumqttd:{{ rumqttd_container_image_tag }}"
+rumqttd_container_image_registry_prefix: docker.io/
+rumqttd_container_image_tag: "{{ rumqttd_version }}"
+rumqttd_container_image_force_pull: "{{ rumqttd_container_image.endswith(':latest') }}"
+
+rumqttd_container_network: '{{ rumqttd_identifier }}'
+
+# The port number in the container
+rumqttd_container_http_port: 1883
+
+# Controls whether the rumqttd container exposes its HTTP port (as defined by `rumqttd_container_http_port`).
+#
+# Takes an "<ip>:<port>" or "<port>" value (e.g. "127.0.0.1:8731"), or empty string to not expose.
+rumqttd_container_http_host_bind_port: "1883"
+
+# A list of additional container networks that the container would be connected to.
+# The role does not create these networks, so make sure they already exist.
+# Use this to expose this container to a reverse proxy, which runs in a different container network.
+rumqttd_container_additional_networks: []

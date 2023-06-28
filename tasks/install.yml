@@ -1,0 +1,29 @@
+---
+
+- name: Ensure rumqttd network is created in Docker
+  community.docker.docker_network:
+    name: "{{ rumqttd_container_network }}"
+    driver: bridge
+
+
+- name: Ensure rumqttd path exists
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    mode: 0700
+    owner: "{{ rumqttd_uid }}"
+    group: "{{ rumqttd_gid }}"
+  with_items:
+    - {path: "{{ rumqttd_base_path }}", when: true}
+    - {path: "{{ rumqttd_config_path }}", when: true}
+
+- name: Ensure rumqttd container image is pulled
+  community.docker.docker_image:
+    name: "{{ rumqttd_container_image }}"
+    source: "{{ 'pull' if ansible_version.major > 2 or ansible_version.minor > 7 else omit }}"
+
+- name: Ensure rumqttd.service installed
+  ansible.builtin.template:
+    src: "{{ role_path }}/templates/systemd/rumqttd.service.j2"
+    dest: "{{ devture_systemd_docker_base_systemd_path }}/{{ rumqttd_identifier }}.service"
+    mode: 0644
