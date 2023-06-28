@@ -13,7 +13,7 @@ rumqttd_systemd_required_services_list: ['docker.service']
 
 rumqttd_version: 0.21.0
 
-rumqttd_container_image: "{{ rumqttd_container_image_registry_prefix }}superseriousbusiness/rumqttd:{{ rumqttd_container_image_tag }}"
+rumqttd_container_image: "{{ rumqttd_container_image_registry_prefix }}bytebeamio/rumqttd:{{ rumqttd_container_image_tag }}"
 rumqttd_container_image_registry_prefix: docker.io/
 rumqttd_container_image_tag: "{{ rumqttd_version }}"
 rumqttd_container_image_force_pull: "{{ rumqttd_container_image.endswith(':latest') }}"
