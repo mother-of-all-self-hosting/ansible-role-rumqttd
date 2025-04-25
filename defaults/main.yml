@@ -16,6 +16,7 @@ rumqttd_identifier: rumqttd
 rumqttd_base_path: "/{{ rumqttd_identifier }}"
 rumqttd_config_path: "{{ rumqttd_base_path }}/config"
 
+# renovate: datasource=docker depName=bytebeamio/rumqttd versioning=semver
 rumqttd_version: 0.19.0
 
 rumqttd_uid: ''
