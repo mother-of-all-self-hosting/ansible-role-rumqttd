@@ -27,7 +27,7 @@ See the project's [documentation](https://github.com/bytebeamio/rumqtt/blob/main
 
 ## Adjusting the playbook configuration
 
-To enable Docmost with this role, add the following configuration to your `vars.yml` file.
+To enable rumqttd with this role, add the following configuration to your `vars.yml` file.
 
 ```yaml
 ########################################################################
@@ -67,4 +67,4 @@ You can find the logs in [systemd-journald](https://www.freedesktop.org/software
 
 ## Alternatives
 
-* [Mosquitto](mosquitto.md) is another, more feature-complete MQTT broker
+[Mosquitto](https://mosquitto.org/) is another, more feature-complete MQTT broker. The role for it is available [here](https://github.com/mother-of-all-self-hosting/ansible-role-mosquitto).
