@@ -1,29 +1,19 @@
 <!--
-SPDX-FileCopyrightText: 2023 Julian-Samuel Gebühr
+SPDX-FileCopyrightText: 2023 Slavi Pantaleev
+SPDX-FileCopyrightText: 2025 Suguru Hirahara
 
 SPDX-License-Identifier: AGPL-3.0-or-later
 -->
 
-# Rumqttd Ansible Role
+# rumqttd server Ansible role
 
-![Rumqtt Logo](assets/rumqtt.png)
+This is an [Ansible](https://www.ansible.com/) role which installs [rumqttd](https://github.com/bytebeamio/rumqtt) to run as a [Docker](https://www.docker.com/) container wrapped in a systemd service.
 
-A high performance, embeddable [MQTT](https://en.wikipedia.org/wiki/MQTT) broker. This role helps you to set up Rumqttd:
+This role *implicitly* depends on:
 
-- with everything run in [Docker](https://www.docker.com/) containers
-- powered by [the official Rumqttd container image](https://hub.docker.com/r/bytebeamio/rumqttd/)
+- [`com.devture.ansible.role.playbook_help`](https://github.com/devture/com.devture.ansible.role.playbook_help)
+- [`com.devture.ansible.role.systemd_docker_base`](https://github.com/devture/com.devture.ansible.role.systemd_docker_base)
 
+Check [defaults/main.yml](defaults/main.yml) for the full list of supported options.
 
-## Installing
-
-To configure and install Rumqttd on your own server(s), you should use a playbook like [Mother of all self-hosting](https://github.com/mother-of-all-self-hosting/mash-playbook) or write your own.
-
-# Configuring this role for your playbook
-
-```yaml
-rumqttd_enabled: true
-```
-
-## Support
-
-- Github issues: [mother-of-all-self-hosting/ansible-role-rumqttd/issues](https://github.com/mother-of-all-self-hosting/ansible-role-rumqttd/issues)
+💡 See this [document](docs/configuring-rumqttd.md) for details about setting up the service with this role.
