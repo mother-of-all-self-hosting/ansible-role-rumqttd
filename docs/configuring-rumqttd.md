@@ -45,6 +45,14 @@ rumqttd_enabled: true
 ########################################################################
 ```
 
+### Change the MQTT port (optional)
+
+If you need to change the MQTT port, add the following configuration to your `vars.yml` file (adapt to your needs).
+
+```yaml
+rumqttd_container_http_host_bind_port: "1884"
+```
+
 ## Installing
 
 After configuring the playbook, run the installation command of your playbook as below:

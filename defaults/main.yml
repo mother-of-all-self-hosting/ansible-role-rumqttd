@@ -37,7 +37,7 @@ rumqttd_container_http_port: 1883
 # Controls whether the rumqttd container exposes its HTTP port (as defined by `rumqttd_container_http_port`).
 #
 # Takes an "<ip>:<port>" or "<port>" value (e.g. "127.0.0.1:8731"), or empty string to not expose.
-rumqttd_container_http_host_bind_port: "1883"
+rumqttd_container_http_host_bind_port: "{{ rumqttd_container_http_port }}"
 
 # The base container network. It will be auto-created by this role if it doesn't exist already.
 rumqttd_container_network: '{{ rumqttd_identifier }}'
