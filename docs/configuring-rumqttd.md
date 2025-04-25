@@ -1,23 +1,33 @@
 <!--
+SPDX-FileCopyrightText: 2020 - 2024 MDAD project contributors
+SPDX-FileCopyrightText: 2020 - 2024 Slavi Pantaleev
+SPDX-FileCopyrightText: 2020 Aaron Raimist
+SPDX-FileCopyrightText: 2020 Chris van Dijk
+SPDX-FileCopyrightText: 2020 Dominik Zajac
+SPDX-FileCopyrightText: 2020 Mickaël Cornière
+SPDX-FileCopyrightText: 2022 François Darveau
+SPDX-FileCopyrightText: 2022 Julian Foad
+SPDX-FileCopyrightText: 2022 Warren Bailey
+SPDX-FileCopyrightText: 2023 Antonis Christofides
+SPDX-FileCopyrightText: 2023 Felix Stupp
 SPDX-FileCopyrightText: 2023 Julian-Samuel Gebühr
+SPDX-FileCopyrightText: 2023 Pierre 'McFly' Marty
+SPDX-FileCopyrightText: 2024 - 2025 Suguru Hirahara
 
 SPDX-License-Identifier: AGPL-3.0-or-later
 -->
 
-# rumqttd
+# Setting up rumqttd
 
-[rumqttd](https://github.com/bytebeamio/rumqtt) is a high performance, embeddable [MQTT](https://en.wikipedia.org/wiki/MQTT) broker installed via [mother-of-all-self-hosting/ansible-role-rumqttd](https://github.com/mother-of-all-self-hosting/ansible-role-rumqttd).
+This is an [Ansible](https://www.ansible.com/) role which installs [rumqttd](https://github.com/bytebeamio/rumqtt) to run as a [Docker](https://www.docker.com/) container wrapped in a systemd service.
 
+rumqttd is a high performance, embeddable [MQTT](https://en.wikipedia.org/wiki/MQTT) broker.
 
-# Configuring this role for your playbook
+See the project's [documentation](https://github.com/bytebeamio/rumqtt/blob/main/README.md) to learn what rumqtt does and why it might be useful to you.
 
-## Dependencies
+## Adjusting the playbook configuration
 
-This service does not require any dependecies.
-
-## Configuration
-
-To enable this service, add the following configuration to your `vars.yml` file and re-run the [installation](../installing.md) process:
+To enable Docmost with this role, add the following configuration to your `vars.yml` file.
 
 ```yaml
 ########################################################################
@@ -26,9 +36,7 @@ To enable this service, add the following configuration to your `vars.yml` file 
 #                                                                      #
 ########################################################################
 
-
 rumqttd_enabled: true
-
 
 ########################################################################
 #                                                                      #
@@ -37,10 +45,25 @@ rumqttd_enabled: true
 ########################################################################
 ```
 
+## Installing
+
+After configuring the playbook, run the installation command of your playbook as below:
+
+```sh
+ansible-playbook -i inventory/hosts setup.yml --tags=setup-all,start
+```
+
+If you use the MASH playbook, the shortcut commands with the [`just` program](https://github.com/mother-of-all-self-hosting/mash-playbook/blob/main/docs/just.md) are also available: `just install-all` or `just setup-all`
 
 ## Usage
 
-You can then start to send and subscribe to MQTT topics. Use port 1883 and the servers IP or any domain you configured to point at this server.
+After running the command for installation, you can start to send and subscribe to MQTT topics. Use port `1883` and the servers IP or any domain you configured to point at this server.
+
+## Troubleshooting
+
+### Check the service's logs
+
+You can find the logs in [systemd-journald](https://www.freedesktop.org/software/systemd/man/systemd-journald.service.html) by logging in to the server with SSH and running `journalctl -fu rumqttd` (or how you/your playbook named the service, e.g. `mash-rumqttd`).
 
 ## Alternatives
 
