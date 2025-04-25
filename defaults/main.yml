@@ -15,7 +15,7 @@ rumqttd_config_path: "{{ rumqttd_base_path }}/config"
 
 rumqttd_systemd_required_services_list: ['docker.service']
 
-rumqttd_version: 0.21.0
+rumqttd_version: 0.19.0
 
 rumqttd_container_image: "{{ rumqttd_container_image_registry_prefix }}bytebeamio/rumqttd:{{ rumqttd_container_image_tag }}"
 rumqttd_container_image_registry_prefix: docker.io/
