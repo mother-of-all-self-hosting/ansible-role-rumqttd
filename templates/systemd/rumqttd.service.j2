@@ -24,17 +24,17 @@ ExecStartPre=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_s
 ExecStartPre=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_systemd_docker_base_host_command_docker }} rm {{ rumqttd_identifier }} 2>/dev/null || true'
 
 ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} create \
-                --rm \
-                --name={{ rumqttd_identifier }} \
-                --log-driver=none \
-                --user={{ rumqttd_uid }}:{{ rumqttd_gid }} \
-                --cap-drop=ALL \
-                --read-only \
-                --network={{ rumqttd_container_network }} \
-                {% if rumqttd_container_http_host_bind_port %}
-                -p {{ rumqttd_container_http_host_bind_port }}:{{ rumqttd_container_http_port }} \
-                {% endif %}
-                {{ rumqttd_container_image }}
+      --rm \
+      --name={{ rumqttd_identifier }} \
+      --log-driver=none \
+      --user={{ rumqttd_uid }}:{{ rumqttd_gid }} \
+      --cap-drop=ALL \
+      --read-only \
+      --network={{ rumqttd_container_network }} \
+      {% if rumqttd_container_http_host_bind_port %}
+      -p {{ rumqttd_container_http_host_bind_port }}:{{ rumqttd_container_http_port }} \
+      {% endif %}
+      {{ rumqttd_container_image }}
 
 {% for network in rumqttd_container_additional_networks %}
 ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} network connect {{ network }} {{ rumqttd_identifier }}
