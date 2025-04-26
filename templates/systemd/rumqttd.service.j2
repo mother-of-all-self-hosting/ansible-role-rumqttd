@@ -34,6 +34,9 @@ ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} create \
       {% if rumqttd_container_http_host_bind_port %}
       -p {{ rumqttd_container_http_host_bind_port }}:{{ rumqttd_container_http_port }} \
       {% endif %}
+      {% for arg in rumqttd_container_extra_arguments %}
+      {{ arg }} \
+      {% endfor %}
       {{ rumqttd_container_image }}
 
 {% for network in rumqttd_container_additional_networks %}

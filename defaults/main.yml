@@ -47,6 +47,9 @@ rumqttd_container_additional_networks: "{{ rumqttd_container_additional_networks
 rumqttd_container_additional_networks_auto: []
 rumqttd_container_additional_networks_custom: []
 
+# A list of extra arguments to pass to the container (`docker run` command)
+rumqttd_container_extra_arguments: []
+
 # List of systemd services that the rumqttd systemd service depends on
 rumqttd_systemd_required_services_list: "{{ rumqttd_systemd_required_services_list_default + rumqttd_systemd_required_services_list_auto + rumqttd_systemd_required_services_list_custom }}"
 rumqttd_systemd_required_services_list_default: "{{ [devture_systemd_docker_base_docker_service_name] if devture_systemd_docker_base_docker_service_name else [] }}"
