@@ -29,11 +29,11 @@ ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} create \
                 --log-driver=none \
                 --user={{ rumqttd_uid }}:{{ rumqttd_gid }} \
                 --cap-drop=ALL \
+                --read-only \
+                --network={{ rumqttd_container_network }} \
                 {% if rumqttd_container_http_host_bind_port %}
                 -p {{ rumqttd_container_http_host_bind_port }}:{{ rumqttd_container_http_port }} \
                 {% endif %}
-                --network={{ rumqttd_container_network }} \
-                --read-only \
                 {{ rumqttd_container_image }}
 
 {% for network in rumqttd_container_additional_networks %}
