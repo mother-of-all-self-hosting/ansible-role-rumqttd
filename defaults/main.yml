@@ -22,8 +22,6 @@ rumqttd_version: 0.19.0
 rumqttd_uid: ''
 rumqttd_gid: ''
 
-rumqttd_systemd_required_services_list: ['docker.service']
-
 rumqttd_container_image: "{{ rumqttd_container_image_registry_prefix }}bytebeamio/rumqttd:{{ rumqttd_container_image_tag }}"
 rumqttd_container_image_tag: "{{ rumqttd_version }}"
 rumqttd_container_image_registry_prefix: "{{ rumqttd_container_image_registry_prefix_upstream }}"
@@ -48,3 +46,12 @@ rumqttd_container_network: '{{ rumqttd_identifier }}'
 rumqttd_container_additional_networks: "{{ rumqttd_container_additional_networks_auto + rumqttd_container_additional_networks_custom }}"
 rumqttd_container_additional_networks_auto: []
 rumqttd_container_additional_networks_custom: []
+
+# List of systemd services that the rumqttd systemd service depends on
+rumqttd_systemd_required_services_list: "{{ rumqttd_systemd_required_services_list_default + rumqttd_systemd_required_services_list_auto + rumqttd_systemd_required_services_list_custom }}"
+rumqttd_systemd_required_services_list_default: "{{ [devture_systemd_docker_base_docker_service_name] if devture_systemd_docker_base_docker_service_name else [] }}"
+rumqttd_systemd_required_services_list_auto: []
+rumqttd_systemd_required_services_list_custom: []
+
+# List of systemd services that the rumqttd systemd service wants
+rumqttd_systemd_wanted_services_list: []
