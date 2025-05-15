@@ -6,16 +6,16 @@
 
 ---
 
-- name: Ensure rumqttd path exists
+- name: Ensure rumqttd paths exist
   ansible.builtin.file:
-    path: "{{ item.path }}"
+    path: "{{ item }}"
     state: directory
-    mode: 0700
+    mode: 0750
     owner: "{{ rumqttd_uid }}"
     group: "{{ rumqttd_gid }}"
   with_items:
-    - {path: "{{ rumqttd_base_path }}", when: true}
-    - {path: "{{ rumqttd_config_path }}", when: true}
+    - "{{ rumqttd_base_path }}"
+    - "{{ rumqttd_config_path }}"
 
 - name: Ensure rumqttd container image is pulled
   community.docker.docker_image:
@@ -24,14 +24,14 @@
     force_source: "{{ rumqttd_container_image_force_pull if ansible_version.major > 2 or ansible_version.minor >= 8 else omit }}"
     force: "{{ omit if ansible_version.major > 2 or ansible_version.minor >= 8 else rumqttd_container_image_force_pull }}"
 
-- name: Ensure rumqttd network is created in Docker
+- name: Ensure rumqttd container network is created
   community.docker.docker_network:
     enable_ipv6: "{{ devture_systemd_docker_base_ipv6_enabled }}"
     name: "{{ rumqttd_container_network }}"
     driver: bridge
     driver_options: "{{ devture_systemd_docker_base_container_networks_driver_options }}"
 
-- name: Ensure rumqttd.service installed
+- name: Ensure rumqttd systemd service is present
   ansible.builtin.template:
     src: "{{ role_path }}/templates/systemd/rumqttd.service.j2"
     dest: "{{ devture_systemd_docker_base_systemd_path }}/{{ rumqttd_identifier }}.service"
