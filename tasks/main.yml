@@ -5,11 +5,15 @@
 
 ---
 
-- block:
-    - when: rumqttd_enabled | bool
+
+- name: Perform rumqttd installation tasks
+  block:
+    - name: Validate rumqttd configuration
+      when: rumqttd_enabled | bool
       ansible.builtin.include_tasks: "{{ role_path }}/tasks/validate_config.yml"
 
-    - when: rumqttd_enabled | bool
+    - name: Install rumqttd
+      when: rumqttd_enabled | bool
       ansible.builtin.include_tasks: "{{ role_path }}/tasks/install.yml"
   tags:
     - setup-all
@@ -17,8 +21,10 @@
     - install-all
     - install-rumqttd
 
-- block:
-    - when: not rumqttd_enabled | bool
+- name: Perform rumqttd uninstallation tasks
+  block:
+    - name: Uninstall rumqttd
+      when: not rumqttd_enabled | bool
       ansible.builtin.include_tasks: "{{ role_path }}/tasks/uninstall.yml"
   tags:
     - setup-all
