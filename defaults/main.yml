@@ -19,8 +19,8 @@ rumqttd_config_path: "{{ rumqttd_base_path }}/config"
 # renovate: datasource=docker depName=bytebeamio/rumqttd versioning=semver
 rumqttd_version: 0.19.0
 
-rumqttd_uid: ''
-rumqttd_gid: ''
+rumqttd_uid: ""
+rumqttd_gid: ""
 
 rumqttd_container_image: "{{ rumqttd_container_image_registry_prefix }}bytebeamio/rumqttd:{{ rumqttd_container_image_tag }}"
 rumqttd_container_image_tag: "{{ rumqttd_version }}"
@@ -38,7 +38,7 @@ rumqttd_container_http_port: 1883
 rumqttd_container_http_host_bind_port: "{{ rumqttd_container_http_port }}"
 
 # The base container network. It will be auto-created by this role if it doesn't exist already.
-rumqttd_container_network: '{{ rumqttd_identifier }}'
+rumqttd_container_network: "{{ rumqttd_identifier }}"
 
 # A list of additional container networks that the container would be connected to.
 # The role does not create these networks, so make sure they already exist.

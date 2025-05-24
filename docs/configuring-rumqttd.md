@@ -75,4 +75,4 @@ You can find the logs in [systemd-journald](https://www.freedesktop.org/software
 
 ## Alternatives
 
-[Mosquitto](https://mosquitto.org/) is another, more feature-complete MQTT broker. The role for it is available [here](https://github.com/mother-of-all-self-hosting/ansible-role-mosquitto).
+[Mosquitto](https://mosquitto.org/) is another, more feature-complete MQTT broker. The role for it is available at [this repository](https://github.com/mother-of-all-self-hosting/ansible-role-mosquitto) maintained by the [Mother-of-All-Self-Hosting (MASH)](https://github.com/mother-of-all-self-hosting) team.

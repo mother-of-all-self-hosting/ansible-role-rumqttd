@@ -4,13 +4,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 ---
-
 - name: Check existence of rumqttd systemd service
   ansible.builtin.stat:
     path: "{{ devture_systemd_docker_base_systemd_path }}/{{ rumqttd_identifier }}.service"
   register: rumqttd_service_stat
 
-- when: rumqttd_service_stat.stat.exists | bool
+- name: Uninstall rumqttd systemd services and files
+  when: rumqttd_service_stat.stat.exists | bool
   block:
     - name: Ensure rumqttd systemd service is stopped
       ansible.builtin.service:

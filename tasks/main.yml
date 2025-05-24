@@ -4,28 +4,25 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 ---
-
-
 - name: Perform rumqttd installation tasks
-  block:
-    - name: Validate rumqttd configuration
-      when: rumqttd_enabled | bool
-      ansible.builtin.include_tasks: "{{ role_path }}/tasks/validate_config.yml"
-
-    - name: Install rumqttd
-      when: rumqttd_enabled | bool
-      ansible.builtin.include_tasks: "{{ role_path }}/tasks/install.yml"
   tags:
     - setup-all
     - setup-rumqttd
     - install-all
     - install-rumqttd
+  block:
+    - name: Validate rumqttd configuration
+      when: rumqttd_enabled | bool
+      ansible.builtin.include_tasks: "{{ role_path }}/tasks/validate_config.yml"
+    - name: Install rumqttd
+      when: rumqttd_enabled | bool
+      ansible.builtin.include_tasks: "{{ role_path }}/tasks/install.yml"
 
 - name: Perform rumqttd uninstallation tasks
+  tags:
+    - setup-all
+    - setup-rumqttd
   block:
     - name: Uninstall rumqttd
       when: not rumqttd_enabled | bool
       ansible.builtin.include_tasks: "{{ role_path }}/tasks/uninstall.yml"
-  tags:
-    - setup-all
-    - setup-rumqttd
