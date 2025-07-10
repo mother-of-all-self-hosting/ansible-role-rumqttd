@@ -1,8 +1,9 @@
 ---
 galaxy_info:
-  role_name: rumqttd
   author: Julian-Samuel Gebühr
   company: Hyteck
+  role_name: rumqttd
+  namespace: mash
   description: Ansible role to install rumqttd, a high performance, embeddable MQTT broker
   platforms:
     - name: Debian
