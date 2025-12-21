@@ -47,7 +47,7 @@ rumqttd_container_additional_networks: "{{ rumqttd_container_additional_networks
 rumqttd_container_additional_networks_auto: []
 rumqttd_container_additional_networks_custom: []
 
-# A list of extra arguments to pass to the container (`docker run` command)
+# A list of extra arguments to pass to the container (`docker create` command)
 rumqttd_container_extra_arguments: "{{ rumqttd_container_extra_arguments_auto + rumqttd_container_extra_arguments_custom }}"
 rumqttd_container_extra_arguments_auto: []
 rumqttd_container_extra_arguments_custom: []
