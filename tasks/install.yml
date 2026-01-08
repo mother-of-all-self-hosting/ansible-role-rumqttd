@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2023 Julian-Samuel Gebühr
-# SPDX-FileCopyrightText: 2023 - 2025 Slavi Pantaleev
-# SPDX-FileCopyrightText: 2025 Suguru Hirahara
+# SPDX-FileCopyrightText: 2023-2025 Slavi Pantaleev
+# SPDX-FileCopyrightText: 2025, 2026 Suguru Hirahara
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -15,6 +15,16 @@
   with_items:
     - "{{ rumqttd_base_path }}"
     - "{{ rumqttd_config_path }}"
+
+- name: Ensure rumqttd support file installed
+  ansible.builtin.template:
+    src: "{{ role_path }}/templates/{{ item }}.j2"
+    dest: "{{ rumqttd_base_path }}/{{ item }}"
+    mode: "0640"
+    owner: "{{ rumqttd_uid }}"
+    group: "{{ rumqttd_gid }}"
+  with_items:
+    - env
 
 - name: Ensure rumqttd container image is pulled via community.docker.docker_image
   when: devture_systemd_docker_base_container_image_pull_method == 'ansible-module'
