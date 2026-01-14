@@ -29,16 +29,16 @@ rumqttd_container_image_registry_prefix_upstream: "{{ rumqttd_container_image_re
 rumqttd_container_image_registry_prefix_upstream_default: docker.io/
 rumqttd_container_image_force_pull: "{{ rumqttd_container_image.endswith(':latest') }}"
 
-# The port number in the container
-rumqttd_container_http_port: 1883
-
-# Controls whether the rumqttd container exposes its HTTP port (as defined by `rumqttd_container_http_port`).
+# Controls whether the container exposes its HTTP port (tcp/1883 in the container).
 #
-# Takes an "<ip>:<port>" or "<port>" value (e.g. "127.0.0.1:8731"), or empty string to not expose.
+# Takes an "<ip>:<port>" or "<port>" value (e.g. "127.0.0.1:2586"), or empty string to not expose.
 rumqttd_container_http_host_bind_port: "{{ rumqttd_container_http_port }}"
 
 # The base container network. It will be auto-created by this role if it doesn't exist already.
 rumqttd_container_network: "{{ rumqttd_identifier }}"
+
+# The port number in the container
+rumqttd_container_http_port: 1883
 
 # A list of additional container networks that the container would be connected to.
 # The role does not create these networks, so make sure they already exist.
