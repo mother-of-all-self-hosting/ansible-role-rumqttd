@@ -37,6 +37,9 @@ rumqttd_container_http_host_bind_port: "{{ rumqttd_container_http_port }}"
 # The base container network. It will be auto-created by this role if it doesn't exist already.
 rumqttd_container_network: "{{ rumqttd_identifier }}"
 
+# Control if the container network is deleted on uninstalling.
+rumqttd_container_network_deletion_enabled: true
+
 # The port number in the container
 rumqttd_container_http_port: 1883
 

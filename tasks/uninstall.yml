@@ -25,21 +25,24 @@
         path: "{{ devture_systemd_docker_base_systemd_path }}/{{ rumqttd_identifier }}.service"
         state: absent
 
-    - name: Ensure rumqttd container network does not exist via community.docker.docker_network
-      when: devture_systemd_docker_base_container_network_creation_method == 'ansible-module'
-      community.docker.docker_network:
-        name: "{{ rumqttd_container_network }}"
-        state: absent
-      register: rumqttd_network_deletion_result
+    - name: Ensure rumqttd container network does not exist
+      when: rumqttd_container_network_deletion_enabled
+      block:
+        - name: Ensure rumqttd container network does not exist via community.docker.docker_network
+          when: devture_systemd_docker_base_container_network_creation_method == 'ansible-module'
+          community.docker.docker_network:
+            name: "{{ rumqttd_container_network }}"
+            state: absent
+          register: rumqttd_network_deletion_result
 
-    - name: Ensure rumqttd container network does not exist via ansible.builtin.command
-      when: devture_systemd_docker_base_container_network_creation_method == 'command'
-      ansible.builtin.command:
-        cmd: >-
-          {{ devture_systemd_docker_base_host_command_docker }} network rm
-          {{ rumqttd_container_network }}
-      register: rumqttd_network_deletion_result
-      changed_when: rumqttd_container_network in rumqttd_network_deletion_result.stdout
+        - name: Ensure rumqttd container network does not exist via ansible.builtin.command
+          when: devture_systemd_docker_base_container_network_creation_method == 'command'
+          ansible.builtin.command:
+            cmd: >-
+              {{ devture_systemd_docker_base_host_command_docker }} network rm
+              {{ rumqttd_container_network }}
+          register: rumqttd_network_deletion_result
+          changed_when: rumqttd_container_network in rumqttd_network_deletion_result.stdout
 
     - name: Ensure rumqttd path does not exist
       ansible.builtin.file:
