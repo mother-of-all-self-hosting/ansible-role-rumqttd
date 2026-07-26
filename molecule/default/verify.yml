@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2026 Suguru Hirahara
+# SPDX-FileCopyrightText: 2026 spatterlight
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+---
+- name: Verify rumqttd systemd service
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Wait for rumqttd service to become active (up to 180s)
+      ansible.builtin.systemd:
+        name: rumqttd.service
+      register: rumqttd_service
+      until: rumqttd_service.status.ActiveState == 'active'
+      retries: 36
+      delay: 5
+
+    - name: Assert rumqttd service is active
+      ansible.builtin.assert:
+        that: rumqttd_service.status.ActiveState == 'active'
+        fail_msg: "rumqttd.service not active ({{ rumqttd_service.status.ActiveState }})"
+        success_msg: "rumqttd.service is active"
+
+    - name: Retrieve rumqttd service log for debugging
+      when: rumqttd_debug_service_enabled | bool
+      ansible.builtin.command:
+        cmd: journalctl -xeu rumqttd.service
+      changed_when: false
+
+    - name: Show rumqttd systemd service status summary
+      ansible.builtin.debug:
+        msg:
+          - "rumqttd systemd: {{ rumqttd_service.status.ActiveState }}"
