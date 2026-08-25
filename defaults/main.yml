@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2023 Julian-Samuel Gebühr
 # SPDX-FileCopyrightText: 2023, 2024 Nikita Chernyi
-# SPDX-FileCopyrightText: 2023-2025 Slavi Pantaleev
+# SPDX-FileCopyrightText: 2023-2026 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2024 Sergio Durigan Junior
 # SPDX-FileCopyrightText: 2025 MASH project contributors
 # SPDX-FileCopyrightText: 2025, 2026 Suguru Hirahara
@@ -34,13 +34,84 @@ rumqttd_container_network: "{{ rumqttd_identifier }}"
 # Control if the container network is deleted on uninstalling.
 rumqttd_container_network_deletion_enabled: true
 
-# Specify how the container publishes its HTTP port (as defined by `rumqttd_container_http_port`).
+# Specify how the container publishes its MQTT port (as defined by `rumqttd_container_tcp_port`).
 #
 # Takes an "<ip>:<port>" or "<port>" value (e.g. "127.0.0.1:2586"), or empty string to not expose.
-rumqttd_container_http_host_bind_port: "{{ rumqttd_container_http_port }}"
+rumqttd_container_tcp_host_bind_port: "{{ rumqttd_container_tcp_port }}"
 
-# The port number in the container
-rumqttd_container_http_port: 1883
+# The port number in the container that the MQTT v3.1.1 listener binds to.
+rumqttd_container_tcp_port: 1883
+
+# Controls whether an MQTT v5 listener is set up, and how it is exposed.
+#
+# Clients speaking MQTT v5 cannot use the v3.1.1 listener above (and vice versa),
+# so a deployment serving both needs both listeners.
+rumqttd_v5_enabled: true
+rumqttd_container_v5_port: 1884
+
+# Specify how the container publishes its MQTT v5 port (as defined by `rumqttd_container_v5_port`).
+#
+# Takes an "<ip>:<port>" or "<port>" value (e.g. "127.0.0.1:2586"), or empty string to not expose.
+rumqttd_container_v5_host_bind_port: ""
+
+# Controls whether an MQTT-over-WebSocket listener is set up, and how it is exposed.
+rumqttd_websocket_enabled: true
+rumqttd_container_websocket_port: 8083
+
+# Specify how the container publishes its WebSocket port (as defined by `rumqttd_container_websocket_port`).
+#
+# Takes an "<ip>:<port>" or "<port>" value (e.g. "127.0.0.1:2586"), or empty string to not expose.
+rumqttd_container_websocket_host_bind_port: ""
+
+# Controls whether rumqttd's HTTP console is set up, and how it is exposed.
+#
+# The console is an unauthenticated debugging interface which reports the broker's
+# configuration, its routing metrics and the state of connected devices, and which
+# can change the broker's log level. Publishing it to a host port exposes all of
+# that to anyone who can reach the port.
+rumqttd_console_enabled: true
+rumqttd_container_console_port: 3030
+
+# Specify how the container publishes its console port (as defined by `rumqttd_container_console_port`).
+#
+# Takes an "<ip>:<port>" or "<port>" value (e.g. "127.0.0.1:2586"), or empty string to not expose.
+rumqttd_container_console_host_bind_port: ""
+
+# Controls whether a Prometheus metrics endpoint is set up, and how it is exposed.
+#
+# rumqttd's own default binds this to the container's loopback interface, where nothing
+# can scrape it, which is why it is off here rather than on-but-useless. Turning it on
+# binds it on the container network, reachable by a Prometheus running in a container
+# listed in `rumqttd_container_additional_networks`.
+rumqttd_metrics_prometheus_enabled: false
+rumqttd_container_metrics_prometheus_port: 9042
+
+# Specify how the container publishes its Prometheus port (as defined by `rumqttd_container_metrics_prometheus_port`).
+#
+# Takes an "<ip>:<port>" or "<port>" value (e.g. "127.0.0.1:2586"), or empty string to not expose.
+rumqttd_container_metrics_prometheus_host_bind_port: ""
+
+# How often (in seconds) the Prometheus endpoint refreshes the metrics it reports.
+rumqttd_metrics_prometheus_interval_seconds: 1
+
+# Settings applied to every connection on every listener.
+rumqttd_connection_timeout_ms: 60000
+rumqttd_connection_max_payload_size: 20480
+rumqttd_connection_max_inflight_count: 100
+rumqttd_connection_dynamic_filters: true
+
+# Settings for the router, which is what moves messages between connections.
+rumqttd_router_id: 0
+rumqttd_router_max_connections: 10010
+rumqttd_router_max_outgoing_packet_count: 200
+rumqttd_router_max_segment_size: 104857600
+rumqttd_router_max_segment_count: 10
+
+# Additional TOML appended verbatim to the end of the configuration file.
+#
+# Because TOML keys belong to whichever table was declared last, anything put here
+# must open with its own `[section]` header.
+rumqttd_configuration_extension_toml: ""
 
 # A list of additional container networks that the container would be connected to.
 # The role does not create these networks, so make sure they already exist.

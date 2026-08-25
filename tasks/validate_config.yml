@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Julian-Samuel Gebühr
+# SPDX-FileCopyrightText: 2026 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2026 Suguru Hirahara
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
@@ -12,7 +13,12 @@
   when: "lookup('ansible.builtin.varnames', ('^' + item.old + '$'), wantlist=True) | length > 0"
   with_items:
     - { "old": "rumqttd_container_image_force_pull", "new": "<removed> (the new community.docker.docker_image_pull module handles this natively)" }
+    - { "old": "rumqttd_container_http_port", "new": "rumqttd_container_tcp_port" }
+    - { "old": "rumqttd_container_http_host_bind_port", "new": "rumqttd_container_tcp_host_bind_port" }
 
+# The `*_host_bind_port` settings are deliberately not listed here: an empty
+# value is how an operator says "do not publish this port to the host", which is
+# a supported choice rather than a missing setting.
 - name: Fail if required rumqttd settings not defined
   ansible.builtin.fail:
     msg: >-
@@ -22,4 +28,5 @@
     - rumqttd_uid
     - rumqttd_gid
     - rumqttd_container_network
-    - rumqttd_container_http_host_bind_port
+    - rumqttd_container_tcp_port
+

@@ -1,0 +1,69 @@
+{#
+SPDX-FileCopyrightText: 2026 Slavi Pantaleev
+
+SPDX-License-Identifier: AGPL-3.0-or-later
+#}
+{#
+  rumqttd takes its entire configuration from this file. A section left out here
+  is not a default that rumqttd falls back to - it is a listener that does not
+  exist. That cuts both ways: the listeners rumqttd would have set up on its own
+  (MQTT v5, WebSocket, the console, Prometheus) have to be spelled out below in
+  order to keep existing.
+#}
+{% macro connection_settings() %}
+connection_timeout_ms = {{ rumqttd_connection_timeout_ms | int }}
+max_payload_size = {{ rumqttd_connection_max_payload_size | int }}
+max_inflight_count = {{ rumqttd_connection_max_inflight_count | int }}
+dynamic_filters = {{ rumqttd_connection_dynamic_filters | bool | to_json }}
+{% endmacro %}
+id = {{ rumqttd_router_id | int }}
+
+[router]
+id = {{ rumqttd_router_id | int }}
+max_connections = {{ rumqttd_router_max_connections | int }}
+max_outgoing_packet_count = {{ rumqttd_router_max_outgoing_packet_count | int }}
+max_segment_size = {{ rumqttd_router_max_segment_size | int }}
+max_segment_count = {{ rumqttd_router_max_segment_count | int }}
+
+[v4.1]
+name = "v4-1"
+listen = "0.0.0.0:{{ rumqttd_container_tcp_port }}"
+next_connection_delay_ms = 1
+
+[v4.1.connections]
+{{ connection_settings() | trim }}
+{% if rumqttd_v5_enabled | bool %}
+
+[v5.1]
+name = "v5-1"
+listen = "0.0.0.0:{{ rumqttd_container_v5_port }}"
+next_connection_delay_ms = 1
+
+[v5.1.connections]
+{{ connection_settings() | trim }}
+{% endif %}
+{% if rumqttd_websocket_enabled | bool %}
+
+[ws.1]
+name = "ws-1"
+listen = "0.0.0.0:{{ rumqttd_container_websocket_port }}"
+next_connection_delay_ms = 1
+
+[ws.1.connections]
+{{ connection_settings() | trim }}
+{% endif %}
+{% if rumqttd_console_enabled | bool %}
+
+[console]
+listen = "0.0.0.0:{{ rumqttd_container_console_port }}"
+{% endif %}
+{% if rumqttd_metrics_prometheus_enabled | bool %}
+
+[prometheus]
+listen = "0.0.0.0:{{ rumqttd_container_metrics_prometheus_port }}"
+interval = {{ rumqttd_metrics_prometheus_interval_seconds | int }}
+{% endif %}
+{% if rumqttd_configuration_extension_toml | trim | length > 0 %}
+
+{{ rumqttd_configuration_extension_toml | trim }}
+{% endif %}

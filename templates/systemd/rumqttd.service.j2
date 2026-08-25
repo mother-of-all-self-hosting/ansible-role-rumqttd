@@ -1,6 +1,6 @@
 {#
 SPDX-FileCopyrightText: 2023 Julian-Samuel Gebühr
-SPDX-FileCopyrightText: 2023 Slavi Pantaleev
+SPDX-FileCopyrightText: 2023, 2026 Slavi Pantaleev
 SPDX-FileCopyrightText: 2025, 2026 Suguru Hirahara
 
 SPDX-License-Identifier: AGPL-3.0-or-later
@@ -30,14 +30,28 @@ ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} create \
       --cap-drop=ALL \
       --read-only \
       --network={{ rumqttd_container_network }} \
-      {% if rumqttd_container_http_host_bind_port %}
-      -p {{ rumqttd_container_http_host_bind_port }}:{{ rumqttd_container_http_port }} \
+      {% if rumqttd_container_tcp_host_bind_port %}
+      -p {{ rumqttd_container_tcp_host_bind_port }}:{{ rumqttd_container_tcp_port }} \
+      {% endif %}
+      {% if rumqttd_v5_enabled and rumqttd_container_v5_host_bind_port %}
+      -p {{ rumqttd_container_v5_host_bind_port }}:{{ rumqttd_container_v5_port }} \
+      {% endif %}
+      {% if rumqttd_websocket_enabled and rumqttd_container_websocket_host_bind_port %}
+      -p {{ rumqttd_container_websocket_host_bind_port }}:{{ rumqttd_container_websocket_port }} \
+      {% endif %}
+      {% if rumqttd_console_enabled and rumqttd_container_console_host_bind_port %}
+      -p {{ rumqttd_container_console_host_bind_port }}:{{ rumqttd_container_console_port }} \
+      {% endif %}
+      {% if rumqttd_metrics_prometheus_enabled and rumqttd_container_metrics_prometheus_host_bind_port %}
+      -p {{ rumqttd_container_metrics_prometheus_host_bind_port }}:{{ rumqttd_container_metrics_prometheus_port }} \
       {% endif %}
       --env-file={{ rumqttd_base_path }}/env \
+      --mount type=bind,src={{ rumqttd_config_path }},dst=/config,ro \
       {% for arg in rumqttd_container_extra_arguments %}
       {{ arg }} \
       {% endfor %}
-      {{ rumqttd_container_image }}
+      {{ rumqttd_container_image }} \
+      --config=/config/rumqttd.toml
 
 {% for network in rumqttd_container_additional_networks %}
 ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} network connect {{ network }} {{ rumqttd_identifier }}

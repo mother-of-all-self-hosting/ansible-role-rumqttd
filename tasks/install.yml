@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Julian-Samuel Gebühr
-# SPDX-FileCopyrightText: 2023-2025 Slavi Pantaleev
+# SPDX-FileCopyrightText: 2023-2026 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2025, 2026 Suguru Hirahara
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
@@ -26,6 +26,17 @@
   with_items:
     - env
   register: rumqttd_support_files_result
+
+# The container mounts this read-only and is started with `--config` pointing at
+# it, so it is the whole of what the broker knows about itself.
+- name: Ensure rumqttd configuration file installed
+  ansible.builtin.template:
+    src: "{{ role_path }}/templates/rumqttd.toml.j2"
+    dest: "{{ rumqttd_config_path }}/rumqttd.toml"
+    mode: "0640"
+    owner: "{{ rumqttd_uid }}"
+    group: "{{ rumqttd_gid }}"
+  register: rumqttd_config_file_result
 
 - name: Ensure rumqttd container image is pulled via community.docker.docker_image_pull
   when: devture_systemd_docker_base_container_image_pull_method == 'ansible-module'
@@ -80,6 +91,7 @@
     rumqttd_restart_necessary: >-
       {{
         rumqttd_support_files_result.changed | default(false)
+        or rumqttd_config_file_result.changed | default(false)
         or rumqttd_systemd_service_result.changed | default(false)
         or rumqttd_container_image_pull_result_ansible_module.changed | default(false)
         or rumqttd_container_image_pull_result_command.changed | default(false)

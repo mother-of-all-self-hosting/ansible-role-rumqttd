@@ -1,6 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2020 - 2024 MDAD project contributors
-SPDX-FileCopyrightText: 2020 - 2024 Slavi Pantaleev
+SPDX-FileCopyrightText: 2020 - 2024, 2026 Slavi Pantaleev
 SPDX-FileCopyrightText: 2020 Aaron Raimist
 SPDX-FileCopyrightText: 2020 Chris van Dijk
 SPDX-FileCopyrightText: 2020 Dominik Zajac
@@ -47,11 +47,43 @@ rumqttd_enabled: true
 
 ### Change the MQTT port (optional)
 
-If you need to change the MQTT port, add the following configuration to your `vars.yml` file (adapt to your needs).
+If you need to change the port that MQTT clients connect to, add the following configuration to your `vars.yml` file (adapt to your needs).
 
 ```yaml
-rumqttd_container_http_host_bind_port: "1884"
+rumqttd_container_tcp_host_bind_port: "2883"
 ```
+
+That changes the port on the host. To change the port that the broker itself listens on inside its container, set `rumqttd_container_tcp_port` instead — `rumqttd_container_tcp_host_bind_port` follows it unless you also set it explicitly.
+
+Setting `rumqttd_container_tcp_host_bind_port` to an empty string keeps the broker unpublished on the host, which is what you want if the clients are other containers on `rumqttd_container_additional_networks_custom`.
+
+### Other listeners (optional)
+
+Besides the MQTT v3.1.1 listener that `rumqttd_container_tcp_port` configures, the role sets up:
+
+| Listener | Enabled by default | Port setting | Published on the host by default |
+| --- | --- | --- | --- |
+| MQTT v5 | yes | `rumqttd_container_v5_port` (1884) | no |
+| MQTT over WebSocket | yes | `rumqttd_container_websocket_port` (8083) | no |
+| HTTP console | yes | `rumqttd_container_console_port` (3030) | no |
+| Prometheus metrics | no | `rumqttd_container_metrics_prometheus_port` (9042) | no |
+
+Clients speaking MQTT v5 cannot use the v3.1.1 listener (and vice versa), which is why both exist.
+
+Each of them can be turned off (`rumqttd_v5_enabled`, `rumqttd_websocket_enabled`, `rumqttd_console_enabled`, `rumqttd_metrics_prometheus_enabled`) and each has a matching `*_host_bind_port` setting for publishing it on the host. Think twice before publishing the console: it is unauthenticated, reports the broker's configuration and the state of connected devices, and can change the broker's log level.
+
+### Extend the configuration (optional)
+
+Anything the settings above do not cover can be appended to the configuration file verbatim:
+
+```yaml
+rumqttd_configuration_extension_toml: |
+  [metrics]
+    [metrics.meters]
+    push_interval = 5
+```
+
+Because TOML keys belong to whichever table was declared last, what you put here must open with its own `[section]` header.
 
 ## Installing
 
@@ -65,7 +97,7 @@ If you use the MASH playbook, the shortcut commands with the [`just` program](ht
 
 ## Usage
 
-After running the command for installation, you can start to send and subscribe to MQTT topics. Use port `1883` and the servers IP or any domain you configured to point at this server.
+After running the command for installation, you can start to send and subscribe to MQTT topics. Use port `1883` (or whatever you set `rumqttd_container_tcp_host_bind_port` to) and the server's IP or any domain you configured to point at this server.
 
 ## Troubleshooting
 
