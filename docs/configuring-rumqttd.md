@@ -57,6 +57,18 @@ That changes the port on the host. To change the port that the broker itself lis
 
 Setting `rumqttd_container_tcp_host_bind_port` to an empty string keeps the broker unpublished on the host, which is what you want if the clients are other containers on `rumqttd_container_additional_networks_custom`.
 
+### Require credentials (optional)
+
+By default rumqttd accepts any client that connects, which is only appropriate on a network you trust. To require credentials, add the following configuration to your `vars.yml` file (adapt to your needs).
+
+```yaml
+rumqttd_auth_users_custom:
+  - username: someone
+    password: some-password
+```
+
+Credentials apply to every listener. rumqttd has no notion of hashed credentials, so they are stored in plain text in the configuration file that this role writes to the server.
+
 ### Other listeners (optional)
 
 Besides the MQTT v3.1.1 listener that `rumqttd_container_tcp_port` configures, the role sets up:

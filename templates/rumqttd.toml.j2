@@ -9,12 +9,23 @@ SPDX-License-Identifier: AGPL-3.0-or-later
   exist. That cuts both ways: the listeners rumqttd would have set up on its own
   (MQTT v5, WebSocket, the console, Prometheus) have to be spelled out below in
   order to keep existing.
+
+  Credentials are repeated under every listener on purpose. rumqttd authenticates
+  per listener, so a listener without them would let anyone in through the side
+  door of a broker that asks everybody else for a password.
 #}
-{% macro connection_settings() %}
+{% macro connection_settings(auth_section) %}
 connection_timeout_ms = {{ rumqttd_connection_timeout_ms | int }}
 max_payload_size = {{ rumqttd_connection_max_payload_size | int }}
 max_inflight_count = {{ rumqttd_connection_max_inflight_count | int }}
 dynamic_filters = {{ rumqttd_connection_dynamic_filters | bool | to_json }}
+{% if rumqttd_auth_users | length > 0 %}
+
+[{{ auth_section }}]
+{% for user in rumqttd_auth_users %}
+{{ user.username | string | to_json }} = {{ user.password | string | to_json }}
+{% endfor %}
+{% endif %}
 {% endmacro %}
 id = {{ rumqttd_router_id | int }}
 
@@ -31,7 +42,7 @@ listen = "0.0.0.0:{{ rumqttd_container_tcp_port }}"
 next_connection_delay_ms = 1
 
 [v4.1.connections]
-{{ connection_settings() | trim }}
+{{ connection_settings('v4.1.connections.auth') | trim }}
 {% if rumqttd_v5_enabled | bool %}
 
 [v5.1]
@@ -40,7 +51,7 @@ listen = "0.0.0.0:{{ rumqttd_container_v5_port }}"
 next_connection_delay_ms = 1
 
 [v5.1.connections]
-{{ connection_settings() | trim }}
+{{ connection_settings('v5.1.connections.auth') | trim }}
 {% endif %}
 {% if rumqttd_websocket_enabled | bool %}
 
@@ -50,7 +61,7 @@ listen = "0.0.0.0:{{ rumqttd_container_websocket_port }}"
 next_connection_delay_ms = 1
 
 [ws.1.connections]
-{{ connection_settings() | trim }}
+{{ connection_settings('ws.1.connections.auth') | trim }}
 {% endif %}
 {% if rumqttd_console_enabled | bool %}
 

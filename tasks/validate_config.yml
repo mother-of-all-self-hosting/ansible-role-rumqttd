@@ -30,3 +30,11 @@
     - rumqttd_container_network
     - rumqttd_container_tcp_port
 
+- name: Fail if rumqttd credentials are incomplete
+  ansible.builtin.fail:
+    msg: >-
+      Each entry in `rumqttd_auth_users` needs to carry a non-empty `username` and `password`.
+  when: "item.username | default('') | string | length == 0 or item.password | default('') | string | length == 0"
+  with_items: "{{ rumqttd_auth_users }}"
+  loop_control:
+    label: "{{ item.username | default('(no username)') }}"

@@ -94,6 +94,24 @@ rumqttd_container_metrics_prometheus_host_bind_port: ""
 # How often (in seconds) the Prometheus endpoint refreshes the metrics it reports.
 rumqttd_metrics_prometheus_interval_seconds: 1
 
+# Credentials that clients must present in order to connect.
+#
+# When this list is empty, the broker accepts any client that connects — which is
+# rumqttd's own default, and is only appropriate on a network you trust.
+#
+# rumqttd matches these against what the client sends verbatim; it has no notion of
+# hashed credentials, so the passwords are stored in plain text in the configuration
+# file that this role writes.
+#
+# Example:
+#
+# rumqttd_auth_users_custom:
+#   - username: someone
+#     password: some-password
+rumqttd_auth_users: "{{ rumqttd_auth_users_auto + rumqttd_auth_users_custom }}"
+rumqttd_auth_users_auto: []
+rumqttd_auth_users_custom: []
+
 # Settings applied to every connection on every listener.
 rumqttd_connection_timeout_ms: 60000
 rumqttd_connection_max_payload_size: 20480
