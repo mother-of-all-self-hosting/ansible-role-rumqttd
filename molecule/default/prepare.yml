@@ -1,3 +1,4 @@
+# SPDX-FileCopyrightText: 2026 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2026 spatterlight
 # SPDX-FileCopyrightText: 2026 Suguru Hirahara
 #
@@ -18,8 +19,41 @@
     - name: Ensure required packages are installed for rumqttd Molecule tests preparation
       ansible.builtin.package:
         name:
+          # Required by the community.docker modules the role uses, and by the
+          # `uri` module the verification scrapes the metrics endpoint with.
           - python3-requests
         state: present
+
+    # Negative control. The verification speaks MQTT to 127.0.0.1 on the ports
+    # this scenario configures; establishing that nothing answers there before
+    # the role has run is what makes a later round-trip attributable to this
+    # role rather than to something that was already up.
+    #
+    # The probe distinguishes "nothing is listening" from "a broker answered and
+    # declined the connection", which matters here: declining a connection is
+    # exactly what an authenticating broker does, so a control that lumped the
+    # two together would be satisfied by the very thing it has to rule out.
+    - name: Probe the MQTT ports before rumqttd is installed
+      ansible.builtin.script:
+        cmd: >-
+          files/mqtt-probe.py connect 127.0.0.1 {{ item }}
+          '{{ rumqttd_molecule_username }}' '{{ rumqttd_molecule_password }}'
+      register: rumqttd_negative_control
+      changed_when: false
+      with_items:
+        - "{{ rumqttd_molecule_tcp_port }}"
+        - "{{ rumqttd_molecule_v5_port }}"
+
+    - name: Assert nothing answered on the MQTT ports before rumqttd was installed
+      ansible.builtin.assert:
+        that: item.stdout.startswith('refused')
+        fail_msg: >-
+          Something already answers on port {{ item.item }}
+          ({{ item.stdout | trim }}), which would make the verification meaningless
+        success_msg: "Nothing listens on port {{ item.item }} yet"
+      with_items: "{{ rumqttd_negative_control.results }}"
+      loop_control:
+        label: "{{ item.item }}"
 
     - name: Ensure Docker is installed for rumqttd Molecule tests preparation
       ansible.builtin.include_role:

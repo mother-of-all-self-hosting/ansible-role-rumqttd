@@ -1,3 +1,4 @@
+# SPDX-FileCopyrightText: 2026 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2026 spatterlight
 # SPDX-FileCopyrightText: 2026 Suguru Hirahara
 #
@@ -31,9 +32,56 @@ provisioner:
         # Helper variables
         rumqttd_debug_service_enabled: false
 
+        # Every port here is deliberately not one that rumqttd binds when left
+        # to itself (1883, 1884, 8083, 3030, 9042). rumqttd answering on these,
+        # and on nothing else, is what tells the configuration file this role
+        # templated apart from the one compiled into the broker.
+        rumqttd_molecule_tcp_port: 21883
+        rumqttd_molecule_v5_port: 21884
+        rumqttd_molecule_console_port: 23030
+        rumqttd_molecule_prometheus_port: 29042
+
+        # The account the broker is configured with, and which the verification
+        # authenticates as. Kept free of dollar signs: values in this file go
+        # through environment-variable interpolation before Molecule reads them.
+        rumqttd_molecule_username: molecule
+        rumqttd_molecule_password: molecule-probe-password
+
+        # The message pushed through the broker during verification. The payload
+        # exists nowhere else, so receiving it back can only mean the broker
+        # routed it.
+        rumqttd_molecule_topic: molecule/probe
+        rumqttd_molecule_payload: molecule-probe-payload
+
         # Variables for rumqttd
         rumqttd_uid: 1000
         rumqttd_gid: 1000
+
+        rumqttd_container_tcp_port: "{{ rumqttd_molecule_tcp_port }}"
+
+        rumqttd_container_v5_port: "{{ rumqttd_molecule_v5_port }}"
+        rumqttd_container_v5_host_bind_port: "{{ rumqttd_molecule_v5_port }}"
+
+        # Published, because the console reports back the address it was
+        # configured with, which is a value only this role's template could have
+        # produced.
+        rumqttd_container_console_port: "{{ rumqttd_molecule_console_port }}"
+        rumqttd_container_console_host_bind_port: "{{ rumqttd_molecule_console_port }}"
+
+        # Turned off so that the verification can tell a broker which reads this
+        # role's configuration apart from one which ignores it: rumqttd's own
+        # defaults set up a WebSocket listener, and it may not be bound here.
+        rumqttd_websocket_enabled: false
+
+        # Turned on for the opposite reason - rumqttd leaves this off - and
+        # published, so that the verification can scrape it from the test host.
+        rumqttd_metrics_prometheus_enabled: true
+        rumqttd_container_metrics_prometheus_port: "{{ rumqttd_molecule_prometheus_port }}"
+        rumqttd_container_metrics_prometheus_host_bind_port: "{{ rumqttd_molecule_prometheus_port }}"
+
+        rumqttd_auth_users_custom:
+          - username: "{{ rumqttd_molecule_username }}"
+            password: "{{ rumqttd_molecule_password }}"
   env:
     # Workaround for https://github.com/ansible/molecule/issues/4391
     ANSIBLE_ROLES_PATH: ${MOLECULE_PROJECT_DIRECTORY}/..:/.ansible/roles:/usr/share/ansible/roles:/etc/ansible/roles:~/.ansible/roles

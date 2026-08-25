@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2018-2025 Slavi Pantaleev
+SPDX-FileCopyrightText: 2018-2026 Slavi Pantaleev
 SPDX-FileCopyrightText: 2019-2022 Aaron Raimist
 SPDX-FileCopyrightText: 2019-2023 MDAD project contributors
 SPDX-FileCopyrightText: 2023 QEDeD
@@ -47,7 +47,9 @@ Currently there is one testing scenario available.
 
 ### `default`
 
-Tests a standard rumqttd installation.
+Installs rumqttd with credentials configured and every listener moved off the port rumqttd would pick on its own, and then speaks MQTT 3.1.1 to it: an unauthenticated connection and a wrong password are both declined, the configured account gets in, and a message published by one client comes back out to another. It also reads the sockets the broker bound inside its container, which is what tells the configuration file the role wrote apart from the one compiled into the broker, and checks that the running binary reports the version the role installs.
+
+MQTT is spoken by [`files/mqtt-probe.py`](default/files/mqtt-probe.py) rather than by a client program, because rumqttd closes a connection it declines instead of answering with a reason code — which means a client's exit status cannot tell "nothing is listening" apart from "the broker said no", and a check that cannot tell those apart proves nothing.
 
 ## Running
 

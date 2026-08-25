@@ -1,14 +1,39 @@
+# SPDX-FileCopyrightText: 2026 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2026 spatterlight
 # SPDX-FileCopyrightText: 2026 Suguru Hirahara
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 ---
-- name: Verify rumqttd systemd service
+- name: Verify rumqttd
   hosts: all
   become: true
   gather_facts: false
+
+  vars:
+    # Passed to every probe that is supposed to get in. Spelled out once so that
+    # the probe invocations below stay readable.
+    rumqttd_molecule_credentials: "'{{ rumqttd_molecule_username }}' '{{ rumqttd_molecule_password }}'"
+
+    # The listening sockets rumqttd must have inside its container: the two MQTT
+    # listeners, the console, and the metrics endpoint this scenario turned on -
+    # and nothing else. rumqttd left to itself binds 1883, 1884, 8083, 3030 and
+    # 9042, so this list can only come out right if the templated configuration
+    # is the one in force.
+    rumqttd_molecule_expected_ports:
+      - "{{ rumqttd_molecule_tcp_port }}"
+      - "{{ rumqttd_molecule_v5_port }}"
+      - "{{ rumqttd_molecule_console_port }}"
+      - "{{ rumqttd_molecule_prometheus_port }}"
+
   tasks:
+    # Role defaults are not in scope here, but the version that Renovate bumps
+    # lives in them and is what the broker is checked against below.
+    - name: Load the rumqttd role defaults
+      ansible.builtin.include_vars:
+        file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/defaults/main.yml"
+        name: rumqttd_defaults
+
     - name: Wait for rumqttd service to become active (up to 180s)
       ansible.builtin.systemd:
         name: rumqttd.service
@@ -29,7 +54,214 @@
         cmd: journalctl -xeu rumqttd.service
       changed_when: false
 
-    - name: Show rumqttd systemd service status summary
+    # systemd reports `active` as soon as `docker start --attach` is running,
+    # which says nothing about the broker inside having read its configuration
+    # and bound a listener - and `Restart=always` would keep saying it about a
+    # broker crash-looping on a configuration it cannot parse. This is the first
+    # probe that looks past that, and it is also the first one that says the
+    # credentials the role configured are accepted.
+    - name: Wait for rumqttd to accept an authenticated MQTT connection (up to 60s)
+      ansible.builtin.script:
+        cmd: >-
+          files/mqtt-probe.py connect 127.0.0.1 {{ rumqttd_molecule_tcp_port }}
+          {{ rumqttd_molecule_credentials }}
+      register: rumqttd_authenticated_probe
+      changed_when: false
+      until: rumqttd_authenticated_probe.stdout.startswith('accepted')
+      retries: 12
+      delay: 5
+
+    # Asked of the binary inside the container that is actually running, rather
+    # than read back off the image tag the role asked Docker for.
+    - name: Ask the running rumqttd which version it is
+      ansible.builtin.command:
+        cmd: docker exec rumqttd rumqttd --version
+      register: rumqttd_version_probe
+      changed_when: false
+
+    - name: Assert the running rumqttd is the version this role installs
+      ansible.builtin.assert:
+        that: (rumqttd_version_probe.stdout | trim) == ('rumqttd ' ~ rumqttd_defaults.rumqttd_version)
+        fail_msg: >-
+          rumqttd reports "{{ rumqttd_version_probe.stdout | trim }}",
+          expected version {{ rumqttd_defaults.rumqttd_version }}
+        success_msg: 'rumqttd reports "{{ rumqttd_version_probe.stdout | trim }}"'
+
+    # The listening sockets are read out of the container's own network
+    # namespace, so this sees what the broker bound rather than what the host
+    # happens to have published. That is what lets a listener the scenario
+    # turned off be told apart from one that is merely unpublished.
+    - name: Read the sockets rumqttd is listening on inside its container
+      ansible.builtin.command:
+        cmd: docker exec rumqttd cat /proc/net/tcp
+      register: rumqttd_proc_net_tcp
+      changed_when: false
+
+    # Only sockets in the listening state (`0A`) bound to 0.0.0.0 (`00000000`),
+    # which is what the role's template binds. Anchoring the local address also
+    # keeps Docker's own embedded DNS resolver out of the list: on a user-defined
+    # network it listens inside the container on 127.0.0.11 on a random high
+    # port, and counting it would make this assertion fail for a reason that has
+    # nothing to do with rumqttd.
+    - name: Determine which ports rumqttd bound
+      ansible.builtin.set_fact:
+        rumqttd_bound_ports: >-
+          {{
+            rumqttd_proc_net_tcp.stdout
+            | regex_findall('(?m)^\s*\d+:\s+00000000:([0-9A-F]{4})\s+[0-9A-F]{8}:[0-9A-F]{4}\s+0A\s')
+            | map('int', base=16)
+            | unique
+            | sort
+          }}
+
+    - name: Assert rumqttd bound exactly the listeners the role configured
+      ansible.builtin.assert:
+        that: rumqttd_bound_ports == (rumqttd_molecule_expected_ports | map('int') | sort)
+        fail_msg: >-
+          rumqttd is listening on {{ rumqttd_bound_ports }},
+          expected {{ rumqttd_molecule_expected_ports | map('int') | sort }}
+          (1883, 1884, 8083, 3030 or 9042 among them would mean the broker fell back to
+          the configuration compiled into it instead of reading the one this role wrote)
+        success_msg: "rumqttd listens on {{ rumqttd_bound_ports }} and nothing else"
+
+    # The console answers with the address it was configured to listen on. That
+    # address is read back out of the running broker, and rumqttd's own default
+    # for it is 0.0.0.0:3030, so seeing this scenario's port in the answer is
+    # the templated configuration being quoted back by the process using it.
+    - name: Ask the rumqttd console what it was configured with
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ rumqttd_molecule_console_port }}/"
+        return_content: true
+      register: rumqttd_console_probe
+
+    - name: Assert the console reports the address the role templated
+      ansible.builtin.assert:
+        that: "'0.0.0.0:' ~ rumqttd_molecule_console_port in rumqttd_console_probe.content"
+        fail_msg: >-
+          The rumqttd console reports {{ rumqttd_console_probe.content }},
+          expected it to name 0.0.0.0:{{ rumqttd_molecule_console_port }}
+        success_msg: "The rumqttd console reports {{ rumqttd_console_probe.content | trim }}"
+
+    # The container is created with `--log-driver=none` and attached to by the
+    # systemd unit, which is what puts its output in the journal that the role's
+    # documentation sends operators to. rumqttd prints a banner on startup, so
+    # finding it here says that path is intact.
+    - name: Read the rumqttd service journal
+      ansible.builtin.command:
+        cmd: journalctl --no-pager --unit rumqttd.service
+      register: rumqttd_journal
+      changed_when: false
+
+    - name: Assert the broker's own output reaches the journal
+      ansible.builtin.assert:
+        that: "'___ _   _ __' in rumqttd_journal.stdout"
+        fail_msg: >-
+          The rumqttd startup banner is not in the journal, so nothing the broker
+          prints reaches `journalctl -fu rumqttd`
+        success_msg: "The broker's own output reaches the journal"
+
+    # rumqttd accepts every client that connects unless its configuration names
+    # credentials. A refusal here says two things at once: the configuration
+    # file this role wrote is in force, and the credentials in it are genuinely
+    # enforced rather than merely written down.
+    - name: Connect to rumqttd without credentials
+      ansible.builtin.script:
+        cmd: "files/mqtt-probe.py connect 127.0.0.1 {{ rumqttd_molecule_tcp_port }} '' ''"
+      register: rumqttd_anonymous_probe
+      changed_when: false
+
+    - name: Assert rumqttd refuses an unauthenticated connection
+      ansible.builtin.assert:
+        that: rumqttd_anonymous_probe.stdout.startswith('rejected')
+        fail_msg: >-
+          rumqttd did not decline an unauthenticated connection
+          ({{ rumqttd_anonymous_probe.stdout | trim }})
+        success_msg: "rumqttd refuses an unauthenticated connection"
+
+    # Tells a broker that compares the password apart from one that waves any
+    # set of credentials through.
+    - name: Connect to rumqttd with a wrong password
+      ansible.builtin.script:
+        cmd: >-
+          files/mqtt-probe.py connect 127.0.0.1 {{ rumqttd_molecule_tcp_port }}
+          '{{ rumqttd_molecule_username }}' '{{ rumqttd_molecule_password }}-wrong'
+      register: rumqttd_wrong_password_probe
+      changed_when: false
+
+    - name: Assert rumqttd refuses a wrong password
+      ansible.builtin.assert:
+        that: rumqttd_wrong_password_probe.stdout.startswith('rejected')
+        fail_msg: >-
+          rumqttd accepted a wrong password for {{ rumqttd_molecule_username }}
+          ({{ rumqttd_wrong_password_probe.stdout | trim }})
+        success_msg: "rumqttd refuses a wrong password"
+
+    # The v5 listener speaks a protocol the probe does not, so the broker is
+    # expected to answer and then decline - which is a different outcome from
+    # nothing being there at all, and from the v3.1.1 listener having ended up
+    # on this port by mistake.
+    - name: Connect to the MQTT v5 port with a v3.1.1 client
+      ansible.builtin.script:
+        cmd: >-
+          files/mqtt-probe.py connect 127.0.0.1 {{ rumqttd_molecule_v5_port }}
+          {{ rumqttd_molecule_credentials }}
+      register: rumqttd_v5_probe
+      changed_when: false
+
+    - name: Assert the MQTT v5 listener is published and is not the v3.1.1 one
+      ansible.builtin.assert:
+        that: rumqttd_v5_probe.stdout.startswith('rejected')
+        fail_msg: >-
+          Probing the MQTT v5 port {{ rumqttd_molecule_v5_port }} with a v3.1.1 client
+          gave "{{ rumqttd_v5_probe.stdout | trim }}", expected the broker to answer and decline
+        success_msg: "The MQTT v5 listener answers on {{ rumqttd_molecule_v5_port }} and declines v3.1.1"
+
+    # rumqttd keeps this endpoint off unless it is configured, and binds it to
+    # the container's own loopback interface when it is not told otherwise, so
+    # scraping it from the test host is only possible because of what the role
+    # templated and published.
+    - name: Scrape the rumqttd metrics endpoint
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ rumqttd_molecule_prometheus_port }}/"
+        return_content: true
+      register: rumqttd_metrics_probe
+
+    - name: Assert the metrics endpoint reports rumqttd's router metrics
+      ansible.builtin.assert:
+        that: "'metrics_router_total_publishes' in rumqttd_metrics_probe.content"
+        fail_msg: >-
+          The metrics endpoint on {{ rumqttd_molecule_prometheus_port }} does not report
+          rumqttd's router metrics ({{ rumqttd_metrics_probe.content[:200] }})
+        success_msg: "The metrics endpoint reports rumqttd's router metrics"
+
+    # A publish/subscribe round-trip is what an MQTT broker exists to do. The
+    # payload exists nowhere but this scenario, so getting it back can only mean
+    # the broker routed it from one client to another.
+    - name: Push a message through rumqttd
+      ansible.builtin.script:
+        cmd: >-
+          files/mqtt-probe.py roundtrip 127.0.0.1 {{ rumqttd_molecule_tcp_port }}
+          {{ rumqttd_molecule_credentials }}
+          '{{ rumqttd_molecule_topic }}' '{{ rumqttd_molecule_payload }}'
+      register: rumqttd_roundtrip_probe
+      changed_when: false
+
+    - name: Assert the published message came back through rumqttd
+      ansible.builtin.assert:
+        that: (rumqttd_roundtrip_probe.stdout | trim) == ('received ' ~ rumqttd_molecule_payload)
+        fail_msg: >-
+          rumqttd answered "{{ rumqttd_roundtrip_probe.stdout | trim }}" on {{ rumqttd_molecule_topic }},
+          expected "received {{ rumqttd_molecule_payload }}"
+        success_msg: "rumqttd routed the message published on {{ rumqttd_molecule_topic }}"
+
+    - name: Show rumqttd verification summary
       ansible.builtin.debug:
         msg:
           - "rumqttd systemd: {{ rumqttd_service.status.ActiveState }}"
+          - "rumqttd version: {{ rumqttd_version_probe.stdout | trim }}"
+          - "rumqttd listeners: {{ rumqttd_bound_ports }}"
+          - "rumqttd console: {{ rumqttd_console_probe.content | trim }}"
+          - "rumqttd anonymous connection: {{ rumqttd_anonymous_probe.stdout | trim }}"
+          - "rumqttd wrong password: {{ rumqttd_wrong_password_probe.stdout | trim }}"
+          - "rumqttd MQTT v5 port: {{ rumqttd_v5_probe.stdout | trim }}"
+          - "rumqttd round-trip: {{ rumqttd_roundtrip_probe.stdout | trim }}"
