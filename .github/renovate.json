@@ -6,6 +6,6 @@
     "The bigger problem the next person should know about is upstream's, not this role's: rumqttd 0.20.0 was released on 2025-09-29 and no container image was ever pushed for it. `build_rumqttd_docker.sh` in the rumqtt repository is a shell script a maintainer runs by hand, and the release workflow only uploads x86_64 binaries to GitHub Releases. The annotation in defaults/main.yml is therefore correct - `datasource=docker` tracks the only images that exist, and 0.19.0 is genuinely the newest one - but it has had nothing to propose since February 2024 and will keep having nothing until upstream pushes an image again. Pointing it at the GitHub releases instead would propose versions that cannot be pulled, which is why it stays where it is."
   ],
   "extends": [
-    "github>mother-of-all-self-hosting/renovate-config#v1.0.0"
+    "github>mother-of-all-self-hosting/renovate-config#v1.1.0"
   ]
 }
