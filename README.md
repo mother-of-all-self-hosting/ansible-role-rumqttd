@@ -38,6 +38,6 @@ Refer to [this page](./molecule/README.md) for details about how to utilize it.
 
 ### Releases
 
-Release tags are computed from the state of the repository rather than written by hand. [`bin/compute-next-tag.sh`](./bin/compute-next-tag.sh) reads the rumqttd version out of [`defaults/main.yml`](defaults/main.yml) and the tags that already exist, and prints the tag the current commit should carry — a fresh `-0` for a version that has never been released, the next counter for anything else that changes the role, and nothing at all for a commit that only touches documentation or CI. The [autotag workflow](.github/workflows/autotag.yml) pushes whatever it prints.
+Tags are created by [`.github/workflows/autotag.yml`](.github/workflows/autotag.yml), which asks [`bin/compute-next-tag.sh`](bin/compute-next-tag.sh) what the commit on `main` should be released as. The answer comes from the rumqttd version pinned in [`defaults/main.yml`](defaults/main.yml) and from the tags that already exist, so a commit that only touches documentation or CI is not released at all, and any change to the role itself is — without waiting for a dependency bump to carry it along.
 
-Because the answer depends only on what is in the tree, merges release themselves and the result does not depend on the order pull requests land in. [`bin/test-compute-next-tag.sh`](./bin/test-compute-next-tag.sh) exercises that against throwaway repositories, and runs as a pre-commit hook whenever the computation or the defaults change.
+[`bin/test-compute-next-tag.sh`](bin/test-compute-next-tag.sh) exercises that script against throwaway repositories, and runs as a prek hook.
