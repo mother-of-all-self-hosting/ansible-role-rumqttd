@@ -252,7 +252,7 @@
           expected "received {{ rumqttd_molecule_payload }}"
         success_msg: "rumqttd routed the message published on {{ rumqttd_molecule_topic }}"
 
-    - name: Show rumqttd verification summary
+    - name: Show the rumqttd verification summary
       ansible.builtin.debug:
         msg:
           - "rumqttd systemd: {{ rumqttd_service.status.ActiveState }}"
