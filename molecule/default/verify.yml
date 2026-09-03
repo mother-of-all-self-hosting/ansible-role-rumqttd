@@ -82,9 +82,7 @@
     - name: Assert the running rumqttd is the version this role installs
       ansible.builtin.assert:
         that: (rumqttd_version_probe.stdout | trim) == ('rumqttd ' ~ rumqttd_defaults.rumqttd_version)
-        fail_msg: >-
-          rumqttd reports "{{ rumqttd_version_probe.stdout | trim }}",
-          expected version {{ rumqttd_defaults.rumqttd_version }}
+        fail_msg: "rumqttd reports {{ rumqttd_version_probe.stdout | trim | default('none') }}, expected {{ rumqttd_defaults.rumqttd_version }}"
         success_msg: 'rumqttd reports "{{ rumqttd_version_probe.stdout | trim }}"'
 
     # The listening sockets are read out of the container's own network
