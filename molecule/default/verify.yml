@@ -74,7 +74,7 @@
 
     # Asked of the binary inside the container that is actually running, rather
     # than read back off the image tag the role asked Docker for.
-    - name: Ask the running rumqttd which version it is
+    - name: Query the version of the running rumqttd
       ansible.builtin.command:
         cmd: docker exec rumqttd rumqttd --version
       register: rumqttd_version_probe
