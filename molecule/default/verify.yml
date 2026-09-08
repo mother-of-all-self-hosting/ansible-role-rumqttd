@@ -58,7 +58,7 @@
     - name: Retrieve the rumqttd systemd service log for debugging
       when: rumqttd_debug_service_enabled | bool
       ansible.builtin.command:
-        cmd: journalctl -xeu rumqttd.service
+        cmd: journalctl --no-pager --output=cat --unit=rumqttd.service
       changed_when: false
 
     # systemd reports `active` as soon as `docker start --attach` is running,
@@ -153,7 +153,7 @@
     # finding it here says that path is intact.
     - name: Read the rumqttd service journal
       ansible.builtin.command:
-        cmd: journalctl --no-pager --unit rumqttd.service
+        cmd: journalctl --no-pager --output=cat --unit rumqttd.service
       register: rumqttd_journal
       changed_when: false
 
