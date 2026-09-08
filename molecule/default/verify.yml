@@ -83,14 +83,14 @@
     - name: Query the version of the running rumqttd
       ansible.builtin.command:
         cmd: docker exec rumqttd rumqttd --version
-      register: rumqttd_version_probe
+      register: rumqttd_version_reported
       changed_when: false
 
     - name: Assert the running rumqttd is the version this role installs
       ansible.builtin.assert:
-        that: (rumqttd_version_probe.stdout | trim) == ('rumqttd ' ~ rumqttd_defaults.rumqttd_version)
-        fail_msg: "rumqttd reports {{ rumqttd_version_probe.stdout | trim | default('none') }}, expected {{ rumqttd_defaults.rumqttd_version }}"
-        success_msg: 'rumqttd reports "{{ rumqttd_version_probe.stdout | trim }}"'
+        that: (rumqttd_version_reported.stdout | trim) == ('rumqttd ' ~ rumqttd_defaults.rumqttd_version)
+        fail_msg: "rumqttd reports {{ rumqttd_version_reported.stdout | trim | default('none') }}, expected {{ rumqttd_defaults.rumqttd_version }}"
+        success_msg: 'rumqttd reports "{{ rumqttd_version_reported.stdout | trim }}"'
 
     # The listening sockets are read out of the container's own network
     # namespace, so this sees what the broker bound rather than what the host
@@ -263,7 +263,7 @@
       ansible.builtin.debug:
         msg:
           - "rumqttd systemd: {{ rumqttd_service.status.ActiveState }}"
-          - "rumqttd version: {{ rumqttd_version_probe.stdout | trim }}"
+          - "rumqttd version: {{ rumqttd_version_reported.stdout | trim }}"
           - "rumqttd listeners: {{ rumqttd_bound_ports }}"
           - "rumqttd console: {{ rumqttd_console_probe.content | trim }}"
           - "rumqttd anonymous connection: {{ rumqttd_anonymous_probe.stdout | trim }}"
