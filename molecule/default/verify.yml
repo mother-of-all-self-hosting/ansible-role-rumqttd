@@ -27,6 +27,8 @@
       - "{{ rumqttd_molecule_prometheus_port }}"
 
   tasks:
+    - name: Verify that rumqttd works
+      block:
     # The role is not included in this playbook, so its defaults are not in
     # scope. Reading defaults/main.yml directly ties the version assertion
     # below.
@@ -270,3 +272,19 @@
           - "rumqttd wrong password: {{ rumqttd_wrong_password_probe.stdout | trim }}"
           - "rumqttd MQTT v5 port: {{ rumqttd_v5_probe.stdout | trim }}"
           - "rumqttd round-trip: {{ rumqttd_roundtrip_probe.stdout | trim }}"
+
+      rescue:
+        # Whatever went wrong, the reason is almost always in the systemd service log.
+        - name: Retrieve the rumqttd systemd service log
+          ansible.builtin.command:
+            cmd: journalctl --no-pager --output=cat --unit=rumqttd.service
+          register: rumqttd_service_log
+          changed_when: false
+
+        - name: Show the rumqttd systemd service log
+          ansible.builtin.debug:
+            var: rumqttd_service_log.stdout_lines
+
+        - name: Fail because verification did not pass
+          ansible.builtin.fail:
+            msg: "rumqttd verification failed. The systemd service log is printed above."
