@@ -26,6 +26,9 @@
       - "{{ rumqttd_molecule_console_port }}"
       - "{{ rumqttd_molecule_prometheus_port }}"
 
+    rumqttd_verify_units:
+      - rumqttd.service
+
   tasks:
     - name: Verify that rumqttd works
       block:
@@ -37,13 +40,14 @@
             file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/defaults/main.yml"
             name: rumqttd_defaults
 
-        - name: Wait for the rumqttd systemd service to become active (up to 180s)
+        - name: Wait for the rumqttd systemd services to become active (up to 180s each)
           ansible.builtin.systemd_service:
-            name: rumqttd.service
-          register: rumqttd_service
-          until: rumqttd_service.status.ActiveState == 'active'
+            name: "{{ item }}"
+          register: rumqttd_services
+          until: rumqttd_services.status.ActiveState == 'active'
           retries: 36
           delay: 5
+          loop: "{{ rumqttd_verify_units }}"
           # So that giving up is reported by the assertion below rather than as a
           # wall of systemd unit properties.
           failed_when: false
@@ -51,17 +55,20 @@
         # `Restart=always` in the systemd unit means that even a container which crashes
         # and gets restarted reads as active here, so this is a precondition rather than
         # a result.
-        - name: Assert the rumqttd systemd service is active
+        - name: Assert the rumqttd systemd services are active
           ansible.builtin.assert:
-            that: rumqttd_service.status.ActiveState == 'active'
-            fail_msg: "rumqttd.service is not active ({{ rumqttd_service.status.ActiveState }})"
-            success_msg: "rumqttd.service is active"
+            that: rumqttd_services.results | map(attribute='status.ActiveState') | unique | list == ['active']
+            fail_msg: >-
+              Not every service is active:
+              {{ dict(rumqttd_verify_units | zip(rumqttd_services.results | map(attribute='status.ActiveState'))) }}
+            success_msg: "Every systemd service is active"
 
-        - name: Retrieve the rumqttd systemd service log for debugging
+        - name: Retrieve the rumqttd systemd services log for debugging
           when: rumqttd_debug_service_enabled | bool
           ansible.builtin.command:
-            cmd: journalctl --no-pager --output=cat --unit=rumqttd.service
+            cmd: "journalctl --no-pager --output=cat --unit={{ item }}"
           changed_when: false
+          loop: "{{ rumqttd_verify_units }}"
 
         # systemd reports `active` as soon as `docker start --attach` is running,
         # which says nothing about the broker inside having read its configuration
@@ -264,7 +271,7 @@
         - name: Show the rumqttd verification summary
           ansible.builtin.debug:
             msg:
-              - "rumqttd systemd: {{ rumqttd_service.status.ActiveState }}"
+              - "rumqttd systemd: {% for unit, state in rumqttd_verify_units | zip(rumqttd_services.results | map(attribute='status.ActiveState')) %}{{ unit }} ({{ state }}){% if not loop.last %}, {% endif %}{% endfor %}"
               - "rumqttd version: {{ rumqttd_version_reported.stdout | trim }}"
               - "rumqttd listeners: {{ rumqttd_bound_ports }}"
               - "rumqttd console: {{ rumqttd_console_probe.content | trim }}"
