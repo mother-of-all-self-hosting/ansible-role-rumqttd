@@ -51,7 +51,9 @@ ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} create \
       {{ arg }} \
       {% endfor %}
       {{ rumqttd_container_image }} \
-      --config=/config/rumqttd.toml
+      {% for arg in rumqttd_process_extra_arguments %}
+      {{ arg }} \
+      {% endfor %}
 
 {% for network in rumqttd_container_additional_networks %}
 ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} network connect {{ network }} {{ rumqttd_identifier }}

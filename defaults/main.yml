@@ -143,6 +143,13 @@ rumqttd_container_extra_arguments: "{{ rumqttd_container_extra_arguments_auto + 
 rumqttd_container_extra_arguments_auto: []
 rumqttd_container_extra_arguments_custom: []
 
+# A list of extra arguments to pass to the process inside the container
+# Example: ['--SOME_ARGUMENT']
+rumqttd_process_extra_arguments: "{{ rumqttd_process_extra_arguments_auto + rumqttd_process_extra_arguments_custom }}"
+rumqttd_process_extra_arguments_auto:
+  - --config=/config/rumqttd.toml
+rumqttd_process_extra_arguments_custom: []
+
 # List of systemd services that the rumqttd systemd service depends on
 rumqttd_systemd_required_services_list: "{{ rumqttd_systemd_required_services_list_default + rumqttd_systemd_required_services_list_auto + rumqttd_systemd_required_services_list_custom }}"
 rumqttd_systemd_required_services_list_default: "{{ [devture_systemd_docker_base_docker_service_name] if devture_systemd_docker_base_docker_service_name else [] }}"
