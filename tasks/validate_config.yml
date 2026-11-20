@@ -27,7 +27,6 @@
   with_items:
     - rumqttd_uid
     - rumqttd_gid
-    - rumqttd_container_network
     - rumqttd_container_tcp_port
 
 - name: Fail if rumqttd credentials are incomplete
